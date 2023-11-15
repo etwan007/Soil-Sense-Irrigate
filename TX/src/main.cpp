@@ -6,25 +6,16 @@
 #define DI0_PIN 2
 #define frequency 433E6
 
-void sendMessage(int value) {
-  Serial.print("Sending value: ");
-  Serial.println(value);
-
-  // Send packet
-  LoRa.beginPacket();
-  LoRa.print(value);
-  LoRa.endPacket();
-}
+void sendMessage(int value);
 
 void setup() {
   Serial.begin(9600);
-  LoRa.begin(frequency);
   
   // Setup LoRa module
   LoRa.setPins(SS_PIN, RST_PIN, DI0_PIN);
-  if (!LoRa.begin(frequency)) {
+  while (!LoRa.begin(frequency)) {
     Serial.println("LoRa initialization failed. Check your wiring.");
-    while (1);
+    delay(1000);
   }
   Serial.println("LoRa initialization successful!");
 }
@@ -37,3 +28,12 @@ void loop() {
   delay(1000);
 }
 
+void sendMessage(int value) {
+  Serial.print("Sending value: ");
+  Serial.println(value);
+
+  // Send packet
+  LoRa.beginPacket();
+  LoRa.print(value);
+  LoRa.endPacket();
+}
