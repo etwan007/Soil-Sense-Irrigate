@@ -1,73 +1,39 @@
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+#include <SPI.h>
+#include <LoRa.h>
 
-//Wifi Variables
-const char* ssid = "ReceiverAP"; 
-//const char* password = "Password";
-const char* receiverIP = "192.168.4.1";
+#define SS_PIN 10
+#define RST_PIN 9
+#define DI0_PIN 2
+#define frequency 433E6
 
-//Moisture Variables
-const int _dry = 1024; // value for dry sensor
-const int _wet = 560; // value for wet sensor
-int sensorPin = A0;
-int sensorValue;
-int percentageMoisture;
+void sendMessage(int value) {
+  Serial.print("Sending value: ");
+  Serial.println(value);
 
-//Sender ID
-const String senderID = "Transmitter1";
-
-//Function Prototypes
-void sendDataToReceiver();
+  // Send packet
+  LoRa.beginPacket();
+  LoRa.print(value);
+  LoRa.endPacket();
+}
 
 void setup() {
   Serial.begin(9600);
-  delay(10);
-
-  // Connect to the Receiver's AP
-  WiFi.begin(ssid);       //add password here if want
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  LoRa.begin(frequency);
+  
+  // Setup LoRa module
+  LoRa.setPins(SS_PIN, RST_PIN, DI0_PIN);
+  if (!LoRa.begin(frequency)) {
+    Serial.println("LoRa initialization failed. Check your wiring.");
+    while (1);
   }
-
-  Serial.println("\nConnected to the Receiver AP");
-
-  sendDataToReceiver();
+  Serial.println("LoRa initialization successful!");
 }
 
 void loop() {
-  sendDataToReceiver();
-  delay(500);
+  // Send a value
+  int sensorValue = analogRead(A0);
+  sendMessage(sensorValue);
+
+  delay(1000);
 }
 
-void sendDataToReceiver() {
-  HTTPClient http;
-  WiFiClient client;
-  
-  sensorValue = analogRead(sensorPin);
-  Serial.println(sensorValue);
-  percentageMoisture = map(sensorValue, _dry, _wet, 0, 100); // Reverse mapping for percentage
-  Serial.println(percentageMoisture);
-
-  // Create the URL as a single 
-  String url = "http://";
-  url += receiverIP;
-  url += "/data";
-  
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-  // Prepare the data to send
-  String dataToSend = "senderID=" + senderID + "&moisture=" + String(percentageMoisture);
-
-  // Send the data to the receiver
-  int httpResponseCode = http.POST(dataToSend);
-  if (httpResponseCode > 0) {
-    String response = http.getString();
-    //Serial.println("Data sent to Receiver, Response: " + response);
-  } else {
-    Serial.println("Error sending data to Receiver");
-  }
-
-  http.end();
-}
