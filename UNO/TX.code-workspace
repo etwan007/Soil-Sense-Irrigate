@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"name": "TX",
+			"path": "../TX"
+		},
+		{
+			"path": "../RX"
+		},
+		{
+			"name": "UNO",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
